@@ -47,7 +47,7 @@ pub(crate) fn find_extern_irqs(item_mod: &ItemMod) -> Vec<TokenStream2> {
     extern_irqs
 }
 
-/// Expand default `bind_interrupt!` for different chips and nrf-sdc config for nRF52
+/// Expand default `bind_interrupt!` for different chips and nrf-sdc config for nRF52 and nrf54
 pub(crate) fn bind_interrupt_default(keyboard_config: &KeyboardTomlConfig, item_mod: &ItemMod) -> TokenStream2 {
     let extern_irqs_vec = find_extern_irqs(item_mod);
     let extern_irqs = if extern_irqs_vec.is_empty() {
@@ -80,7 +80,7 @@ pub(crate) fn bind_interrupt_default(keyboard_config: &KeyboardTomlConfig, item_
                 }
             }
         }
-        rmk_config::ChipSeries::Nrf52 => {
+        rmk_config::ChipSeries::Nrf52 | rmk_config::ChipSeries::Nrf54 => {
             // Usb and clock interrupt
             let usb_and_clock_interrupt = if let Some(usb_info) = communication.get_usb_info() {
                 let interrupt_name = format_ident!("{}", usb_info.interrupt_name);

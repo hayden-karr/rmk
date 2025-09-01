@@ -12,7 +12,7 @@ pub(crate) fn expand_ble_config(keyboard_config: &KeyboardTomlConfig) -> (TokenS
     }
     let chip = keyboard_config.get_chip_model().unwrap();
     // Advanced parameters are only supported for nrf52(for now)
-    if chip.series != ChipSeries::Nrf52 {
+    if chip.series != ChipSeries::Nrf52 | ChipSeries::Nrf54 {
         return (
             quote! {
                 let ble_battery_config = ::rmk::config::BleBatteryConfig::default();

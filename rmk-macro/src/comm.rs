@@ -63,7 +63,7 @@ pub(crate) fn usb_config_default(keyboard_config: &KeyboardTomlConfig) -> TokenS
                     }
                 }
             }
-            ChipSeries::Nrf52 => quote! {
+            ChipSeries::Nrf52 | ChipSeries::Nrf54 => quote! {
                 // use hardware vbus
                 let driver = ::embassy_nrf::usb::Driver::new(p.#peripheral_name, Irqs, ::embassy_nrf::usb::vbus_detect::HardwareVbusDetect::new(Irqs));
             },

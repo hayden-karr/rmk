@@ -114,6 +114,60 @@ pub(crate) fn chip_init_default(keyboard_config: &KeyboardTomlConfig, peripheral
                 #ble_init
             }
         }
+        ChipSeries::Nrf54 => {
+            let dcdc_config = if chip.chip == "nrf54l15" {
+                quote! {
+                    config.dcdc.reg0_voltage = Some(::embassy_nrf::config::Reg0Voltage::_3V3);
+                    config.dcdc.reg0 = true;
+                    config.dcdc.reg1 = true;
+                }
+            } else {
+                quote! {}
+            };
+            let ble_addr = get_ble_addr(keyboard_config, peripheral_id);
+            let ble_init = match &communication {
+                CommunicationConfig::Ble(_) | CommunicationConfig::Both(_, _) => quote! {
+                    // Initialize nrf-sdc and ble stack
+                    let mpsl_p = ::nrf_sdc::mpsl::Peripherals::new(p.RTC0, p.TIMER0, p.TEMP, p.PPI_CH19, p.PPI_CH30, p.PPI_CH31);
+                    let lfclk_cfg = ::nrf_sdc::mpsl::raw::mpsl_clock_lfclk_cfg_t {
+                        source: ::nrf_sdc::mpsl::raw::MPSL_CLOCK_LF_SRC_RC as u8,
+                        rc_ctiv: ::nrf_sdc::mpsl::raw::MPSL_RECOMMENDED_RC_CTIV as u8,
+                        rc_temp_ctiv: ::nrf_sdc::mpsl::raw::MPSL_RECOMMENDED_RC_TEMP_CTIV as u8,
+                        accuracy_ppm: ::nrf_sdc::mpsl::raw::MPSL_DEFAULT_CLOCK_ACCURACY_PPM as u16,
+                        skip_wait_lfclk_started: ::nrf_sdc::mpsl::raw::MPSL_DEFAULT_SKIP_WAIT_LFCLK_STARTED != 0,
+                    };
+                    static MPSL: ::static_cell::StaticCell<::nrf_sdc::mpsl::MultiprotocolServiceLayer> = ::static_cell::StaticCell::new();
+                    static SESSION_MEM: ::static_cell::StaticCell<::nrf_sdc::mpsl::SessionMem<1>> = ::static_cell::StaticCell::new();
+                    let mpsl = MPSL.init(::defmt::unwrap!(::nrf_sdc::mpsl::MultiprotocolServiceLayer::with_timeslots(
+                        mpsl_p,
+                        Irqs,
+                        lfclk_cfg,
+                        SESSION_MEM.init(::nrf_sdc::mpsl::SessionMem::new())
+                    )));
+                    spawner.must_spawn(mpsl_task(&*mpsl));
+                    let sdc_p = ::nrf_sdc::Peripherals::new(
+                        p.PPI_CH17, p.PPI_CH18, p.PPI_CH20, p.PPI_CH21, p.PPI_CH22, p.PPI_CH23, p.PPI_CH24, p.PPI_CH25, p.PPI_CH26,
+                        p.PPI_CH27, p.PPI_CH28, p.PPI_CH29,
+                    );
+                    let mut rng = ::embassy_nrf::rng::Rng::new(p.RNG, Irqs);
+                    use rand_core::SeedableRng;
+                    let mut rng_gen = ::rand_chacha::ChaCha12Rng::from_rng(&mut rng).unwrap();
+                    let mut sdc_mem = ::nrf_sdc::Mem::<6144>::new(); // 6KB is enough for both central and peripheral
+                    let sdc = ::defmt::unwrap!(build_sdc(sdc_p, &mut rng, &*mpsl, &mut sdc_mem));
+                    let ble_addr = #ble_addr;
+                    let mut host_resources = ::rmk::HostResources::new();
+                    let stack = ::rmk::ble::trouble::build_ble_stack(sdc, ble_addr, &mut rng_gen, &mut host_resources).await;
+                },
+                _ => quote! {},
+            };
+            quote! {
+                use embassy_nrf::interrupt::InterruptExt;
+                let mut config = ::embassy_nrf::config::Config::default();
+                #dcdc_config
+                let p = ::embassy_nrf::init(config);
+                #ble_init
+            }
+        }
         ChipSeries::Rp2040 => {
             let ble_addr = get_ble_addr(keyboard_config, peripheral_id);
             if communication.ble_enabled() {
@@ -204,7 +258,7 @@ fn override_chip_config(chip: &ChipModel, item_fn: &ItemFn) -> TokenStream2 {
         ChipSeries::Stm32 => initialization_tokens.extend(quote! {
             let mut p = ::embassy_stm32::init(config);
         }),
-        ChipSeries::Nrf52 => initialization_tokens.extend(quote! {
+        ChipSeries::Nrf52 | ChipSeries::Nrf54 => initialization_tokens.extend(quote! {
             let mut p = ::embassy_nrf::init(config);
         }),
         ChipSeries::Rp2040 => initialization_tokens.extend(quote! {
@@ -220,7 +274,7 @@ fn override_chip_config(chip: &ChipModel, item_fn: &ItemFn) -> TokenStream2 {
 
 fn get_ble_addr(keyboard_config: &KeyboardTomlConfig, peripheral_id: Option<usize>) -> TokenStream2 {
     let chip = keyboard_config.get_chip_model().unwrap();
-    if chip.series == ChipSeries::Nrf52 {
+    if chip.series == ChipSeries::Nrf52 | ChipSeries::Nrf54 {
         quote! {
             {
                 let ficr = ::embassy_nrf::pac::FICR;

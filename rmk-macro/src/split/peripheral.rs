@@ -60,7 +60,7 @@ pub(crate) fn parse_split_peripheral_mod(id: usize, _attr: proc_macro::TokenStre
 
 fn expand_bind_interrupt_for_split_peripheral(chip: &ChipModel, communication: &CommunicationConfig) -> TokenStream2 {
     match chip.series {
-        ChipSeries::Nrf52 => {
+        ChipSeries::Nrf52 | ChipSeries::Nrf54 => {
             let tx_power = if let Some(pwr) = communication.get_ble_config().unwrap().default_tx_power {
                 quote! { .default_tx_power(#pwr)?  }
             } else {

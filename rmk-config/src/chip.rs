@@ -4,6 +4,7 @@ use crate::KeyboardTomlConfig;
 pub enum ChipSeries {
     Stm32,
     Nrf52,
+    Nrf54,
     #[default]
     Rp2040,
     Esp32,
@@ -20,6 +21,7 @@ impl ChipModel {
     pub fn get_default_config_str(&self) -> Result<&'static str, String> {
         if let Some(board) = self.board.clone() {
             match board.as_str() {
+                "XIAO nrf54l15" => Ok(include_str!("default_config/xiao_nrf54l15")),
                 "nice!nano_v2" | "nice!nano v2" => Ok(include_str!("default_config/nice_nano_v2.toml")),
                 "nice!nano" | "nice!nano_v1" | "nicenano" => Ok(include_str!("default_config/nice_nano.toml")),
                 "XIAO BLE" | "nrfmicro" | "bluemicro840" | "puchi_ble" => {
@@ -42,6 +44,7 @@ impl ChipModel {
             "nrf52833" => Ok(include_str!("default_config/nrf52833.toml")),
             "nrf52832" => Ok(include_str!("default_config/nrf52832.toml")),
             "nrf52810" | "nrf52811" => Ok(include_str!("default_config/nrf52810.toml")),
+            "nrf54l15" => Ok(include_str!("default_config/nrf54l15.toml")),
             "rp2040" => Ok(include_str!("default_config/rp2040.toml")),
             s if s.starts_with("stm32") => Ok(include_str!("default_config/stm32.toml")),
             s if s.starts_with("esp32") => {
@@ -75,6 +78,11 @@ impl KeyboardTomlConfig {
                     chip: "nrf52840".to_string(),
                     board: Some(board),
                 }),
+                "XIAO nrf54l15" => Ok(ChipModel {
+                    series: ChipSeries::Nrf54,
+                    chip: "nrf54l15".to_string(),
+                    board: Some(board),
+                })
                 "pi_pico_w" | "pico_w" => Ok(ChipModel {
                     series: ChipSeries::Rp2040,
                     chip: "rp2040".to_string(),
@@ -95,6 +103,13 @@ impl KeyboardTomlConfig {
                     chip,
                     board: None,
                 })
+            } else if chip.to_lowercase().starts_with("nrf54") {
+                Ok(ChipModel{
+                    series: ChipSeries::Nrf54,
+                    chip,
+                    board: None,
+                })
+            }
             } else if chip.to_lowercase().starts_with("rp2040") {
                 Ok(ChipModel {
                     series: ChipSeries::Rp2040,

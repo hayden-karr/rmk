@@ -22,7 +22,7 @@ pub(crate) fn expand_flash_init(keyboard_config: &KeyboardTomlConfig) -> TokenSt
                     let flash = ::rmk::storage::async_flash_wrapper(::embassy_stm32::flash::Flash::new_blocking(p.FLASH));
                 }
             }
-            ChipSeries::Nrf52 => {
+            ChipSeries::Nrf52 | ChipSeries::Nrf54 => {
                 quote! {
                     let flash = ::nrf_mpsl::Flash::take(mpsl, p.NVMC);
                 }

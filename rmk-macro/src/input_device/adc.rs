@@ -11,7 +11,7 @@ pub(crate) fn expand_adc_device(
     chip_model: ChipSeries,
 ) -> (Vec<Initializer>, Vec<Initializer>) {
     match chip_model {
-        ChipSeries::Nrf52 => {
+        ChipSeries::Nrf52 | ChipSeries::Nrf54 => {
             let mut channel_cfg = vec![];
             let mut adc_type = vec![];
             let mut default_polling_interval = 30000u16; // default 30s
