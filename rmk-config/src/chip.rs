@@ -21,7 +21,7 @@ impl ChipModel {
     pub fn get_default_config_str(&self) -> Result<&'static str, String> {
         if let Some(board) = self.board.clone() {
             match board.as_str() {
-                "XIAO nrf54l15" => Ok(include_str!("default_config/xiao_nrf54l15")),
+                "XIAO nrf54l15" => Ok(include_str!("default_config/xiao_nrf54l15.toml")),
                 "nice!nano_v2" | "nice!nano v2" => Ok(include_str!("default_config/nice_nano_v2.toml")),
                 "nice!nano" | "nice!nano_v1" | "nicenano" => Ok(include_str!("default_config/nice_nano.toml")),
                 "XIAO BLE" | "nrfmicro" | "bluemicro840" | "puchi_ble" => {
@@ -82,7 +82,7 @@ impl KeyboardTomlConfig {
                     series: ChipSeries::Nrf54,
                     chip: "nrf54l15".to_string(),
                     board: Some(board),
-                })
+                }),
                 "pi_pico_w" | "pico_w" => Ok(ChipModel {
                     series: ChipSeries::Rp2040,
                     chip: "rp2040".to_string(),
@@ -109,7 +109,6 @@ impl KeyboardTomlConfig {
                     chip,
                     board: None,
                 })
-            }
             } else if chip.to_lowercase().starts_with("rp2040") {
                 Ok(ChipModel {
                     series: ChipSeries::Rp2040,

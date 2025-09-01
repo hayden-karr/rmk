@@ -274,7 +274,7 @@ fn override_chip_config(chip: &ChipModel, item_fn: &ItemFn) -> TokenStream2 {
 
 fn get_ble_addr(keyboard_config: &KeyboardTomlConfig, peripheral_id: Option<usize>) -> TokenStream2 {
     let chip = keyboard_config.get_chip_model().unwrap();
-    if chip.series == ChipSeries::Nrf52 | ChipSeries::Nrf54 {
+    if !matches! (chip.series, ChipSeries::Nrf52 | ChipSeries::Nrf54) {
         quote! {
             {
                 let ficr = ::embassy_nrf::pac::FICR;
